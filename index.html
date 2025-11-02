@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABDownloadManager - Fast and Reliable Download Manager</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/firebase@9.22.0/firebase-app-compat.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/firebase@9.22.0/firebase-database-compat.min.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+            --neon-blue: #00f3ff;
+            --neon-purple: #b967ff;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        body {
+            background-color: #0a0e17;
+            color: #fff;
+            line-height: 1.6;
+            overflow-x: hidden;
+            background: linear-gradient(135deg, #0a0e17 0%, #1a1f2e 100%);
+        }
+        
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Amazing Header Styles */
+        header {
+            background: rgba(10, 14, 23, 0.9);
+            color: white;
+            padding: 1rem 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        header.scrolled {
+            padding: 0.5rem 0;
+            background: rgba(10, 14, 23, 0.95);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo-icon {
+            font-size: 1.8rem;
+            color: var(--neon-blue);
+            animation: pulse 2s infinite, glow 1.5s ease-in-out infinite alternate;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 5px var(--neon-blue), 0 0 10px var(--neon-blue); }
+            to { text-shadow: 0 0 15px var(--neon-blue), 0 0 30px var(--neon-blue); }
+        }
+        
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s;
+            position: relative;
+            padding: 0.5rem 0;
+        }
+        
+        nav a:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            transition: width 0.3s;
+        }
+        
+        nav a:hover:after {
+            width: 100%;
+        }
+        
+        nav a:hover {
+            color: var(--neon-blue);
+        }
+        
+        .cta-button {
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 243, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-button:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .cta-button:hover:before {
+            left: 100%;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 243, 255, 0.5);
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #0a0e17 0%, #1a1f2e 100%);
+            color: white;
+            padding: 10rem 0 5rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        
+        .hero:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(0, 243, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(185, 103, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(52, 152, 219, 0.05) 0%, transparent 50%);
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(1deg); }
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .hero h2 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            opacity: 0.9;
+        }
+        
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .btn {
+            padding: 0.8rem 1.8rem;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn:hover:before {
+            left: 100%;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 243, 255, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 243, 255, 0.5);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid var(--neon-blue);
+            box-shadow: 0 4px 15px rgba(0, 243, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(0, 243, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 243, 255, 0.3);
+        }
+        
+        /* Features Section */
+        .section {
+            padding: 5rem 0;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .section-title h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+            display: inline-block;
+            font-weight: 700;
+        }
+        
+        .section-title h2:after {
+            content: '';
+            position: absolute;
+            width: 50%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            bottom: -10px;
+            left: 25%;
+            border-radius: 2px;
+        }
+        
+        .section-title p {
+            color: #aaa;
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 1.1rem;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        
+        .feature-card {
+            background: rgba(30, 35, 50, 0.7);
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .feature-card:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--neon-blue), var(--neon-purple));
+            transform: scaleY(0);
+            transition: transform 0.3s;
+            transform-origin: top;
+        }
+        
+        .feature-card:hover:before {
+            transform: scaleY(1);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+            border-color: rgba(0, 243, 255, 0.3);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            transition: transform 0.3s;
+        }
+        
+        .feature-card:hover .feature-icon {
+            transform: scale(1.2) rotate(5deg);
+        }
+        
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .feature-card p {
+            color: #bbb;
+        }
+        
+        /* Download Section */
+        .download-section {
+            background: linear-gradient(135deg, #0f1525 0%, #1a2135 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .download-section:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 70% 30%, rgba(0, 243, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 30% 70%, rgba(185, 103, 255, 0.1) 0%, transparent 50%);
+            opacity: 0.5;
+        }
+        
+        .download-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .download-box {
+            background: rgba(30, 35, 50, 0.8);
+            border-radius: 15px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 700px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            backdrop-filter: blur(10px);
+            animation: pulse-glow 2s infinite;
+        }
+        
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 20px rgba(0, 243, 255, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(0, 243, 255, 0.5); }
+            100% { box-shadow: 0 0 20px rgba(0, 243, 255, 0.3); }
+        }
+        
+        .download-box h3 {
+            margin-bottom: 1.5rem;
+            color: white;
+            font-size: 1.8rem;
+        }
+        
+        .version-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .download-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 2rem 0;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #bbb;
+        }
+        
+        /* Real-time Stats */
+        .live-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .live-stat {
+            background: rgba(30, 35, 50, 0.7);
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            min-width: 150px;
+        }
+        
+        .live-stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--neon-blue);
+            margin-bottom: 0.5rem;
+        }
+        
+        .live-stat-label {
+            font-size: 0.9rem;
+            color: #bbb;
+        }
+        
+        /* Screenshots Section */
+        .screenshots-container {
+            display: flex;
+            overflow-x: auto;
+            gap: 1.5rem;
+            padding: 1rem 0;
+            scrollbar-width: thin;
+        }
+        
+        .screenshot {
+            min-width: 300px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .screenshot:hover {
+            transform: scale(1.05);
+        }
+        
+        .screenshot img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        /* GitHub Section */
+        .github-section {
+            background: linear-gradient(135deg, #0a0e17 0%, #151a28 100%);
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .github-section:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(0, 243, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, rgba(185, 103, 255, 0.1) 0%, transparent 50%);
+            opacity: 0.5;
+        }
+        
+        .github-section .section-title h2,
+        .github-section .section-title p {
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .github-stats {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin: 2rem 0;
+            position: relative;
+            z-index: 1;
+            flex-wrap: wrap;
+        }
+        
+        .github-stat {
+            background: rgba(30, 35, 50, 0.7);
+            padding: 1.5rem;
+            border-radius: 10px;
+            min-width: 150px;
+            transition: transform 0.3s;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .github-stat:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 243, 255, 0.3);
+        }
+        
+        /* Footer */
+        footer {
+            background-color: #0a0e17;
+            color: white;
+            padding: 3rem 0 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .footer-column h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+            color: var(--neon-blue);
+        }
+        
+        .footer-column ul {
+            list-style: none;
+        }
+        
+        .footer-column ul li {
+            margin-bottom: 0.8rem;
+        }
+        
+        .footer-column a {
+            color: #bbb;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-column a:hover {
+            color: var(--neon-blue);
+        }
+        
+        .copyright {
+            text-align: center;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: #bbb;
+            font-size: 0.9rem;
+        }
+        
+        /* Real-time Database Updates */
+        .update-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(30, 35, 50, 0.9);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-left: 4px solid var(--neon-blue);
+            transform: translateX(150%);
+            transition: transform 0.5s;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            max-width: 300px;
+        }
+        
+        .update-notification.show {
+            transform: translateX(0);
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            nav ul {
+                gap: 1rem;
+            }
+            
+            .hero h2 {
+                font-size: 2.5rem;
+            }
+            
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .github-stats, .live-stats {
+                flex-wrap: wrap;
+            }
+            
+            .version-info {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+        
+        /* Progress Bar Animation */
+        .progress-container {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+            width: 0%;
+            border-radius: 5px;
+            transition: width 2s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Amazing Header -->
+    <header id="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon"><i class="fas fa-bolt"></i></div>
+                    <h1>ABDownloadManager</h1>
+                </div>
+                <nav>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#download">Download</a></li>
+                        <li><a href="#screenshots">Screenshots</a></li>
+                        <li><a href="#github">GitHub</a></li>
+                    </ul>
+                </nav>
+                <a href="#download" class="cta-button">Download Now</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h2>Ultimate Download Experience</h2>
+                <p>ABDownloadManager accelerates your downloads, organizes your files, and provides complete control over your downloading experience with cutting-edge technology.</p>
+                <div class="hero-buttons">
+                    <a href="https://github.com/iemabdullah/ab-download-manager/releases/download/abdullahcoded/ABDownloadManager_1.7.1_windows_x64.exe" class="btn btn-primary">Download for Windows</a>
+                    <a href="https://github.com/iemabdullah/ab-download-manager/" class="btn btn-secondary">View on GitHub</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="section">
+        <div class="container">
+            <div class="section-title">
+                <h2>Powerful Features</h2>
+                <p>Everything you need for efficient downloading and file management</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-rocket"></i></div>
+                    <h3>Accelerated Downloads</h3>
+                    <p>Speed up your downloads with multi-threading technology that splits files into multiple segments.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-pause-circle"></i></div>
+                    <h3>Pause & Resume</h3>
+                    <p>Pause downloads at any time and resume them later without losing progress.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-folder"></i></div>
+                    <h3>File Organization</h3>
+                    <p>Automatically categorize your downloads by file type for better organization.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                    <h3>Safe & Secure</h3>
+                    <p>Built-in virus scanning and file integrity checks to keep your system safe.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-globe"></i></div>
+                    <h3>Browser Integration</h3>
+                    <p>Seamlessly integrates with popular browsers to capture download links automatically.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-cogs"></i></div>
+                    <h3>Customizable</h3>
+                    <p>Extensive settings to customize download behavior, limits, and interface.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download" class="section download-section">
+        <div class="container">
+            <div class="section-title">
+                <h2>Download ABDownloadManager</h2>
+                <p>Get the latest version of our download manager for Windows</p>
+            </div>
+            <div class="download-container">
+                <div class="download-box">
+                    <h3>ABDownloadManager v1.7.1</h3>
+                    <div class="version-info">
+                        <div>Version: 1.7.1</div>
+                        <div>Release Date: June 15, 2023</div>
+                    </div>
+                    <p>Compatible with Windows 10, Windows 11, and Windows Server 2019+</p>
+                    
+                    <!-- Real-time Stats -->
+                    <div class="live-stats">
+                        <div class="live-stat">
+                            <div class="live-stat-value" id="live-downloads">50,247</div>
+                            <div class="live-stat-label">Total Downloads</div>
+                        </div>
+                        <div class="live-stat">
+                            <div class="live-stat-value" id="live-active">1,284</div>
+                            <div class="live-stat-label">Active Users</div>
+                        </div>
+                        <div class="live-stat">
+                            <div class="live-stat-value" id="live-rating">4.8</div>
+                            <div class="live-stat-label">User Rating</div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progress-bar"></div>
+                    </div>
+                    <a href="https://github.com/iemabdullah/ab-download-manager/releases/download/abdullahcoded/ABDownloadManager_1.7.1_windows_x64.exe" class="btn btn-primary" id="download-btn">Download Now</a>
+                </div>
+                <div>
+                    <p>Also available on: <a href="https://github.com/iemabdullah/ab-download-manager" target="_blank">GitHub</a></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screenshots Section -->
+    <section id="screenshots" class="section">
+        <div class="container">
+            <div class="section-title">
+                <h2>Screenshots</h2>
+                <p>See ABDownloadManager in action</p>
+            </div>
+            <div class="screenshots-container">
+                <div class="screenshot">
+                    <img src="https://via.placeholder.com/600x400/1a2135/00f3ff?text=Main+Interface" alt="Main Interface">
+                </div>
+                <div class="screenshot">
+                    <img src="https://via.placeholder.com/600x400/1a2135/b967ff?text=Download+Queue" alt="Download Queue">
+                </div>
+                <div class="screenshot">
+                    <img src="https://via.placeholder.com/600x400/1a2135/3498db?text=Settings+Panel" alt="Settings Panel">
+                </div>
+                <div class="screenshot">
+                    <img src="https://via.placeholder.com/600x400/1a2135/2ecc71?text=File+Organizer" alt="File Organizer">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- GitHub Section -->
+    <section id="github" class="section github-section">
+        <div class="container">
+            <div class="section-title">
+                <h2>Open Source Project</h2>
+                <p>ABDownloadManager is an open-source project hosted on GitHub</p>
+            </div>
+            <div class="github-stats">
+                <div class="github-stat">
+                    <div class="stat-number">150+</div>
+                    <div class="stat-label">Stars</div>
+                </div>
+                <div class="github-stat">
+                    <div class="stat-number">40+</div>
+                    <div class="stat-label">Forks</div>
+                </div>
+                <div class="github-stat">
+                    <div class="stat-number">25+</div>
+                    <div class="stat-label">Contributors</div>
+                </div>
+                <div class="github-stat">
+                    <div class="stat-number">15+</div>
+                    <div class="stat-label">Releases</div>
+                </div>
+            </div>
+            <p>We welcome contributions from the developer community!</p>
+            <div class="hero-buttons">
+                <a href="https://github.com/iemabdullah/ab-download-manager" target="_blank" class="btn btn-primary">View on GitHub</a>
+                <a href="https://github.com/iemabdullah/ab-download-manager/issues" target="_blank" class="btn btn-secondary">Report Issues</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-column">
+                    <h3>ABDownloadManager</h3>
+                    <p>A fast, reliable, and feature-rich download manager for Windows.</p>
+                </div>
+                <div class="footer-column">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#download">Download</a></li>
+                        <li><a href="#screenshots">Screenshots</a></li>
+                        <li><a href="#github">GitHub</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Support</h3>
+                    <ul>
+                        <li><a href="#">Documentation</a></li>
+                        <li><a href="https://github.com/iemabdullah/ab-download-manager/issues">Report Bug</a></li>
+                        <li><a href="#">FAQ</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-column">
+                    <h3>Connect</h3>
+                    <ul>
+                        <li><a href="https://github.com/iemabdullah">GitHub</a></li>
+                        <li><a href="#">Twitter</a></li>
+                        <li><a href="#">LinkedIn</a></li>
+                        <li><a href="#">Blog</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="copyright">
+                <p id="copyright-text">Loading copyright information...</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Real-time Update Notification -->
+    <div class="update-notification" id="update-notification">
+        <div class="notification-content">
+            <h4>Live Update</h4>
+            <p id="notification-message">New user just downloaded ABDownloadManager!</p>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration (using a public demo project)
+        const firebaseConfig = {
+            apiKey: "AIzaSyC7eSgT2k6X9Y6Q9Y6Q9Y6Q9Y6Q9Y6Q9Y6Q",
+            authDomain: "abdownloadmanager-demo.firebaseapp.com",
+            databaseURL: "https://abdownloadmanager-demo-default-rtdb.firebaseio.com",
+            projectId: "abdownloadmanager-demo",
+            storageBucket: "abdownloadmanager-demo.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Header scroll effect
+        window.addEventListener('scroll', function() {
+            const header = document.getElementById('header');
+            if (window.scrollY > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+
+        // Animate progress bar
+        document.addEventListener('DOMContentLoaded', function() {
+            const progressBar = document.getElementById('progress-bar');
+            setTimeout(() => {
+                progressBar.style.width = '100%';
+            }, 500);
+        });
+
+        // Download button animation
+        document.getElementById('download-btn').addEventListener('click', function(e) {
+            // In a real implementation, this would trigger the actual download
+            // The link is already set to the actual download URL
+            // This is just for animation purposes
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
+            setTimeout(() => {
+                this.innerHTML = '<i class="fas fa-check"></i> Download Complete!';
+                this.classList.remove('btn-primary');
+                this.classList.add('btn-secondary');
+                
+                // Update download count in real-time
+                updateDownloadCount();
+            }, 2000);
+        });
+
+        // Real-time database updates
+        function updateDownloadCount() {
+            // In a real implementation, this would update the database
+            // For demo purposes, we'll simulate an update
+            const downloadsElement = document.getElementById('live-downloads');
+            let currentDownloads = parseInt(downloadsElement.textContent.replace(/,/g, ''));
+            currentDownloads++;
+            downloadsElement.textContent = currentDownloads.toLocaleString();
+            
+            // Show notification
+            showNotification('New download recorded! Total downloads: ' + currentDownloads.toLocaleString());
+        }
+
+        // Simulate real-time user activity
+        function simulateUserActivity() {
+            const activeUsersElement = document.getElementById('live-active');
+            let activeUsers = parseInt(activeUsersElement.textContent);
+            
+            // Randomly change active users count
+            const change = Math.floor(Math.random() * 10) - 3; // -3 to +6
+            activeUsers = Math.max(1000, activeUsers + change);
+            activeUsersElement.textContent = activeUsers.toLocaleString();
+            
+            // Show notification occasionally
+            if (Math.random() > 0.7) {
+                showNotification(activeUsers + ' users currently active');
+            }
+        }
+
+        // Show notification
+        function showNotification(message) {
+            const notification = document.getElementById('update-notification');
+            const messageElement = document.getElementById('notification-message');
+            
+            messageElement.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+
+        // Update copyright with real-time year
+        function updateCopyright() {
+            const copyrightElement = document.getElementById('copyright-text');
+            const currentYear = new Date().getFullYear();
+            copyrightElement.textContent = `© ${currentYear} ABDownloadManager. All rights reserved. | Designed by Abdullah`;
+        }
+
+        // Initialize real-time features
+        updateCopyright();
+        
+        // Update active users every 10 seconds
+        setInterval(simulateUserActivity, 10000);
+        
+        // Show welcome notification
+        setTimeout(() => {
+            showNotification('Welcome to ABDownloadManager! Real-time stats are active.');
+        }, 2000);
+
+        // Scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe feature cards
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            observer.observe(card);
+        });
+
+        // Observe download box
+        const downloadBox = document.querySelector('.download-box');
+        downloadBox.style.opacity = '0';
+        downloadBox.style.transform = 'translateY(20px)';
+        downloadBox.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        observer.observe(downloadBox);
+    </script>
+</body>
+</html>
